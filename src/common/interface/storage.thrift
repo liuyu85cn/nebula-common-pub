@@ -630,7 +630,9 @@ service GraphStorageService {
     LookupIndexResp lookupIndex(1: LookupIndexRequest req);
 
     GetNeighborsResponse lookupAndTraverse(1: LookupAndTraverseRequest req);
-    ExecResponse addEdgesAtomic(1: AddEdgesRequest req);
+
+    UpdateResponse chainUpdateEdge(1: UpdateEdgeRequest req);
+    ExecResponse chainAddEdges(1: AddEdgesRequest req);
 }
 
 
@@ -831,27 +833,39 @@ service GeneralStorageService {
 
 // transaction request
 struct InternalTxnRequest {
-    1: i64                                  txn_id,
-    2: i32                                  space_id,
-    // need this(part_id) to satisfy getResponse
-    3: i32                                  part_id,
-    // position of chain
-    4: i32                                  position,
-    5: list<list<binary>>                   data
+    1: i64                                      txn_id,
+    2: map<common.PartitionID, i64>             term_of_parts,
+    3: optional AddEdgesRequest                 add_edge_req,
+    4: optional UpdateEdgeRequest               upd_edge_req,
+    5: optional map<common.PartitionID, list<i64>>(
+        cpp.template = "std::unordered_map")    edge_ver,
 }
 
-struct GetValueRequest {
-    1: common.GraphSpaceID space_id,
-    2: common.PartitionID part_id,
-    3: binary key
+//
+// Response for data modification requests
+//
+struct ChainResponse {
+    1: required ResponseCommon result,
 }
 
-struct GetValueResponse {
-    1: required ResponseCommon result
-    2: binary value
+
+struct ChainAddEdgesRequest {
+    1: AddEdgesRequest                          add_edges_request,
+    2: map<common.PartitionID, i64>             term_of_parts,
+    3: optional map<common.PartitionID, list<i64>>(
+        cpp.template = "std::unordered_map")    edge_ver,
+}
+
+
+struct ChainUpdateEdgeRequest {
+    1: UpdateEdgeRequest                        update_edge_request,
+    2: i64                                      term,
+    3: optional i64                             edge_version
+    4: common.GraphSpaceID                      space_id,
+    5: required list<common.PartitionID>    parts,
 }
 
 service InternalStorageService {
-    GetValueResponse  getValue(1: GetValueRequest req);
-    ExecResponse    forwardTransaction(1: InternalTxnRequest req);
+    ExecResponse chainAddEdges(1: ChainAddEdgesRequest req);
+    UpdateResponse chainUpdateEdge(1: ChainUpdateEdgeRequest req);
 }

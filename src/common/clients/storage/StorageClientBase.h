@@ -228,13 +228,13 @@ protected:
         return {req.get_part_id()};
     }
 
-    std::vector<PartitionID> getReqPartsId(const cpp2::InternalTxnRequest &req) const {
-        return {req.get_part_id()};
-    }
+    // std::vector<PartitionID> getReqPartsId(const cpp2::InternalTxnRequest &req) const {
+    //     return {req.get_part_id()};
+    // }
 
-    std::vector<PartitionID> getReqPartsId(const cpp2::GetValueRequest &req) const {
-        return {req.get_part_id()};
-    }
+    // std::vector<PartitionID> getReqPartsId(const cpp2::GetValueRequest &req) const {
+    //     return {req.get_part_id()};
+    // }
 
     std::vector<PartitionID> getReqPartsId(const cpp2::ScanEdgeRequest &req) const {
         return {req.get_part_id()};

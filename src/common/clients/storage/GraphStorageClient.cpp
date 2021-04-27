@@ -156,7 +156,7 @@ GraphStorageClient::addEdges(GraphSpaceID space,
         evb,
         std::move(requests),
         [=](cpp2::GraphStorageServiceAsyncClient* client, const cpp2::AddEdgesRequest& r) {
-            return useToss ? client->future_addEdgesAtomic(r)
+            return useToss ? client->future_chainAddEdges(r)
                            : client->future_addEdges(r);
         });
 }

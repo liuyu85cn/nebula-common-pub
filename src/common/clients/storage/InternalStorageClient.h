@@ -16,7 +16,7 @@
 namespace nebula {
 namespace storage {
 
-typedef ErrorOr<nebula::cpp2::ErrorCode, std::string> ErrOrVal;
+// typedef ErrorOr<cpp2::ErrorCode, std::string> ErrOrVal;
 
 /**
  * A wrapper class for InternalStorageServiceAsyncClient thrift API
@@ -32,33 +32,10 @@ public:
         : Parent(ioThreadPool, metaClient) {}
     virtual ~InternalStorageClient() = default;
 
-    folly::SemiFuture<nebula::cpp2::ErrorCode>
-    forwardTransaction(int64_t txnId,
-                       GraphSpaceID spaceId,
-                       PartitionID partId,
-                       std::string&& data,
-                       folly::EventBase* evb = nullptr);
-
-    folly::SemiFuture<ErrOrVal> getValue(size_t vIdLen,
-                                         GraphSpaceID spaceId,
-                                         folly::StringPiece key,
-                                         folly::EventBase* evb = nullptr);
-
-protected:
-    StatusOr<HostAddr> getFuzzyLeader(GraphSpaceID spaceId, PartitionID partId) const;
-
-    void forwardTransactionImpl(int64_t txnId,
-                                GraphSpaceID spaceId,
-                                PartitionID partId,
-                                std::string&& data,
-                                folly::Promise<nebula::cpp2::ErrorCode> p,
-                                folly::EventBase* evb);
-
-    void getValueImpl(GraphSpaceID spaceId,
-                      PartitionID partId,
-                      std::string&& key,
-                      folly::Promise<ErrOrVal> p,
-                      folly::EventBase* evb = nullptr);
+    void chainUpdateEdge(cpp2::UpdateEdgeRequest& updRequest,
+                         TermID termId,
+                         folly::Promise<cpp2::ErrorCode>&& p,
+                         folly::EventBase* evb = nullptr);
 };
 
 }   // namespace storage
