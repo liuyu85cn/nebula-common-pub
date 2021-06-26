@@ -16,8 +16,6 @@
 namespace nebula {
 namespace storage {
 
-// typedef ErrorOr<cpp2::ErrorCode, std::string> ErrOrVal;
-
 /**
  * A wrapper class for InternalStorageServiceAsyncClient thrift API
  *
@@ -32,10 +30,20 @@ public:
         : Parent(ioThreadPool, metaClient) {}
     virtual ~InternalStorageClient() = default;
 
-    void chainUpdateEdge(cpp2::UpdateEdgeRequest& updRequest,
-                         TermID termId,
-                         folly::Promise<cpp2::ErrorCode>&& p,
-                         folly::EventBase* evb = nullptr);
+    virtual void chainUpdateEdge(cpp2::UpdateEdgeRequest& reversedRequest,
+                                 TermID termOfSrc,
+                                 folly::Promise<cpp2::ErrorCode>&& p,
+                                 folly::EventBase* evb = nullptr);
+
+    virtual void chainAddEdges(cpp2::AddEdgesRequest& originReq,
+                               TermID termId,
+                               folly::Promise<cpp2::ErrorCode>&& p,
+                               folly::EventBase* evb = nullptr);
+
+private:
+    cpp2::ChainAddEdgesRequest makeChainAddReq(const cpp2::AddEdgesRequest& req,
+                                               TermID termId,
+                                               std::vector<int64_t>* pEdgeVer = nullptr);
 };
 
 }   // namespace storage

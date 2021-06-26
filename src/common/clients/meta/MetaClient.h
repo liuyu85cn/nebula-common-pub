@@ -24,6 +24,14 @@
 DECLARE_int32(meta_client_retry_times);
 
 namespace nebula {
+namespace storage {
+class ExtMetaClientModifier;
+class MetaClientTestUpdater;
+class ChainAddEdgesTest_AddEdgesLocalTest_Test;
+}
+}   // namespace nebula
+
+namespace nebula {
 namespace meta {
 
 using PartsAlloc = std::unordered_map<PartitionID, std::vector<HostAddr>>;
@@ -175,6 +183,9 @@ class MetaClient {
     FRIEND_TEST(MetaClientTest, RetryOnceTest);
     FRIEND_TEST(MetaClientTest, RetryUntilLimitTest);
     FRIEND_TEST(MetaClientTest, RocksdbOptionsTest);
+    FRIEND_TEST(ChainAddEdgesTest, AddEdgesLocalTest);
+    friend class storage::MetaClientTestUpdater;
+    // friend class storage::ChainAddEdgesTest_AddEdgesLocalTest_Test;
 
 public:
     MetaClient(std::shared_ptr<folly::IOThreadPoolExecutor> ioThreadPool,
@@ -570,6 +581,8 @@ public:
     std::vector<cpp2::RoleItem> getRolesByUserFromCache(const std::string& user) const;
 
     bool authCheckFromCache(const std::string& account, const std::string& password) const;
+
+    StatusOr<TermID> getTermFromCache(GraphSpaceID spaceId, PartitionID) const;
 
     bool checkShadowAccountFromCache(const std::string& account) const;
 

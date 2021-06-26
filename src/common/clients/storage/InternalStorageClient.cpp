@@ -36,11 +36,11 @@ cpp2::ErrorCode getErrorCode(T& tryResp) {
     return nebula::cpp2::ErrorCode::SUCCEEDED;
 }
 
-void InternalStorageClient::chainUpdateEdge(cpp2::UpdateEdgeRequest& updReq,
-                                            TermID termId,
+void InternalStorageClient::chainUpdateEdge(cpp2::UpdateEdgeRequest& reversedRequest,
+                                            TermID termOfSrc,
                                             folly::Promise<cpp2::ErrorCode>&& p,
                                             folly::EventBase* evb) {
-    auto optLeader = getLeader(updReq.get_space_id(), updReq.get_part_id());
+    auto optLeader = getLeader(reversedRequest.get_space_id(), reversedRequest.get_part_id());
     if (!optLeader.ok()) {
         p.setValue(cpp2::ErrorCode::E_SPACE_NOT_FOUND);
         return;
@@ -49,8 +49,8 @@ void InternalStorageClient::chainUpdateEdge(cpp2::UpdateEdgeRequest& updReq,
     leader.port += kInternalPortOffset;
 
     cpp2::ChainUpdateEdgeRequest chainReq;
-    chainReq.set_update_edge_request(updReq);
-    chainReq.set_term(termId);
+    chainReq.set_update_edge_request(reversedRequest);
+    chainReq.set_term(termOfSrc);
     auto resp = getResponse(
         evb,
         std::make_pair(leader, chainReq),
@@ -62,7 +62,7 @@ void InternalStorageClient::chainUpdateEdge(cpp2::UpdateEdgeRequest& updReq,
         auto code = getErrorCode(t);
         if (code == cpp2::ErrorCode::E_LEADER_CHANGED) {
             std::this_thread::sleep_for(std::chrono::milliseconds(500));
-            chainUpdateEdge(updReq, termId, std::move(p));
+            chainUpdateEdge(reversedRequest, termOfSrc, std::move(p));
         } else {
             p.setValue(code);
         }
