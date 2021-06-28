@@ -11,7 +11,7 @@ namespace nebula {
 namespace storage {
 
 template <typename T>
-cpp2::ErrorCode getErrorCode(T& tryResp) {
+::nebula::cpp2::ErrorCode getErrorCode(T& tryResp) {
     if (!tryResp.hasValue()) {
         LOG(ERROR) << tryResp.exception().what();
         return nebula::cpp2::ErrorCode::E_RPC_FAILURE;
@@ -38,11 +38,11 @@ cpp2::ErrorCode getErrorCode(T& tryResp) {
 
 void InternalStorageClient::chainUpdateEdge(cpp2::UpdateEdgeRequest& reversedRequest,
                                             TermID termOfSrc,
-                                            folly::Promise<cpp2::ErrorCode>&& p,
+                                            folly::Promise<::nebula::cpp2::ErrorCode>&& p,
                                             folly::EventBase* evb) {
     auto optLeader = getLeader(reversedRequest.get_space_id(), reversedRequest.get_part_id());
     if (!optLeader.ok()) {
-        p.setValue(cpp2::ErrorCode::E_SPACE_NOT_FOUND);
+        p.setValue(::nebula::cpp2::ErrorCode::E_SPACE_NOT_FOUND);
         return;
     }
     HostAddr& leader = optLeader.value();
@@ -60,7 +60,7 @@ void InternalStorageClient::chainUpdateEdge(cpp2::UpdateEdgeRequest& reversedReq
 
     std::move(resp).thenTry([=, p = std::move(p)](auto&& t) mutable {
         auto code = getErrorCode(t);
-        if (code == cpp2::ErrorCode::E_LEADER_CHANGED) {
+        if (code == ::nebula::cpp2::ErrorCode::E_LEADER_CHANGED) {
             std::this_thread::sleep_for(std::chrono::milliseconds(500));
             chainUpdateEdge(reversedRequest, termOfSrc, std::move(p));
         } else {
@@ -68,6 +68,54 @@ void InternalStorageClient::chainUpdateEdge(cpp2::UpdateEdgeRequest& reversedReq
         }
         return;
     });
+}
+
+void InternalStorageClient::chainAddEdges(cpp2::AddEdgesRequest& directReq,
+                                          TermID termId,
+                                          folly::Promise<nebula::cpp2::ErrorCode>&& p,
+                                          folly::EventBase* evb) {
+    auto partId = directReq.get_parts().begin()->first;
+    auto optLeader = getLeader(directReq.get_space_id(), partId);
+    if (!optLeader.ok()) {
+        p.setValue(::nebula::cpp2::ErrorCode::E_SPACE_NOT_FOUND);
+        return;
+    }
+    HostAddr& leader = optLeader.value();
+    leader.port += kInternalPortOffset;
+
+    cpp2::ChainAddEdgesRequest chainReq = makeChainAddReq(directReq, termId);
+    auto resp = getResponse(
+        evb,
+        std::make_pair(leader, chainReq),
+        [](cpp2::InternalStorageServiceAsyncClient* client, const cpp2::ChainAddEdgesRequest& r) {
+            return client->future_chainAddEdges(r);
+        });
+
+    std::move(resp).thenTry([=, p = std::move(p)](auto&& t) mutable {
+        auto code = getErrorCode(t);
+        if (code == nebula::cpp2::ErrorCode::E_LEADER_CHANGED) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(500));
+            chainAddEdges(directReq, termId, std::move(p));
+        } else {
+            p.setValue(code);
+        }
+        return;
+    });
+}
+
+cpp2::ChainAddEdgesRequest InternalStorageClient::makeChainAddReq(const cpp2::AddEdgesRequest& req,
+                                                                  TermID termId,
+                                                                  std::vector<int64_t>* pEdgeVer) {
+    cpp2::ChainAddEdgesRequest ret;
+    ret.set_space_id(req.get_space_id());
+    ret.set_parts(req.get_parts());
+    ret.set_prop_names(req.get_prop_names());
+    ret.set_if_not_exists(req.get_if_not_exists());
+    ret.set_term(termId);
+    if (pEdgeVer) {
+        ret.set_edge_version(*pEdgeVer);
+    }
+    return ret;
 }
 
 // void InternalStorageClient::forwardAddEdgesImpl(

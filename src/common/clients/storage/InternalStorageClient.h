@@ -32,12 +32,12 @@ public:
 
     virtual void chainUpdateEdge(cpp2::UpdateEdgeRequest& reversedRequest,
                                  TermID termOfSrc,
-                                 folly::Promise<cpp2::ErrorCode>&& p,
+                                 folly::Promise<::nebula::cpp2::ErrorCode>&& p,
                                  folly::EventBase* evb = nullptr);
 
     virtual void chainAddEdges(cpp2::AddEdgesRequest& originReq,
                                TermID termId,
-                               folly::Promise<cpp2::ErrorCode>&& p,
+                               folly::Promise<::nebula::cpp2::ErrorCode>&& p,
                                folly::EventBase* evb = nullptr);
 
 private:

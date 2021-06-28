@@ -390,5 +390,10 @@ enum ErrorCode {
     E_USER_CANCEL                     = -3052,
     E_TASK_EXECUTION_FAILED           = -3053,
 
+    // toss
+    E_OUTDATED_TERM                   = -3060,
+    E_OUTDATED_EDGE                   = -3061,
+    E_WRITE_WRITE_CONFLICT            = -3062,
+
     E_UNKNOWN                         = -8000,
 } (cpp.enum_strict)
