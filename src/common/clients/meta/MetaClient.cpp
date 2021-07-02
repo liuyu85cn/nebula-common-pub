@@ -2414,6 +2414,7 @@ bool MetaClient::checkShadowAccountFromCache(const std::string& account) const {
 }
 
 StatusOr<TermID> MetaClient::getTermFromCache(GraphSpaceID spaceId, PartitionID partId) const {
+    LOG(INFO) << "messi getTermFromCache(), spaceId = " << spaceId << ", partId = " << partId;
     // static TermID notFound = -1;
     folly::RWSpinLock::ReadHolder holder(localCacheLock_);
     auto spaceInfo = localCache_.find(spaceId);

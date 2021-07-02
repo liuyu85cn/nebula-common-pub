@@ -112,121 +112,12 @@ cpp2::ChainAddEdgesRequest InternalStorageClient::makeChainAddReq(const cpp2::Ad
     ret.set_prop_names(req.get_prop_names());
     ret.set_if_not_exists(req.get_if_not_exists());
     ret.set_term(termId);
-    if (pEdgeVer) {
-        ret.set_edge_version(*pEdgeVer);
-    }
+    UNUSED(pEdgeVer);
+    // if (pEdgeVer) {
+    //     ret.set_edge_ver(*pEdgeVer);
+    // }
     return ret;
 }
-
-// void InternalStorageClient::forwardAddEdgesImpl(
-//     int64_t txnId,
-//     GraphSpaceID spaceId,
-//     PartitionID partId,
-//     std::string&& data,
-//     folly::EventBase* evb = nullptr) {
-//         VLOG(1) << __func__;
-//     }
-
-// StatusOr<HostAddr> InternalStorageClient::getFuzzyLeader(GraphSpaceID spaceId,
-//                                                          PartitionID partId) const {
-//     return getLeader(spaceId, partId);
-// }
-
-// void InternalStorageClient::forwardTransactionImpl(int64_t txnId,
-//                                                    GraphSpaceID spaceId,
-//                                                    PartitionID partId,
-//                                                    std::string&& data,
-//                                                    folly::Promise<cpp2::ErrorCode> p,
-//                                                    folly::EventBase* evb) {
-//     VLOG(1) << "forwardTransactionImpl txnId=" << txnId;
-//     auto statusOrLeader = getFuzzyLeader(spaceId, partId);
-//     if (!statusOrLeader.ok()) {
-//         p.setValue(cpp2::ErrorCode::E_SPACE_NOT_FOUND);
-//         return;
-//     }
-//     HostAddr& dest = statusOrLeader.value();
-//     dest.port += kInternalPortOffset;
-
-//     cpp2::InternalTxnRequest interReq;
-//     interReq.set_txn_id(txnId);
-//     interReq.set_space_id(spaceId);
-//     interReq.set_part_id(partId);
-//     interReq.set_position(1);
-//     (*interReq.data_ref()).resize(2);
-//     (*interReq.data_ref()).back().emplace_back(data);
-//     getResponse(
-//         evb,
-//         std::make_pair(dest, interReq),
-//         [](cpp2::InternalStorageServiceAsyncClient* client, const cpp2::InternalTxnRequest& r) {
-//             return client->future_forwardTransaction(r);
-//         })
-//         .thenTry([=, p = std::move(p)](auto&& t) mutable {
-//             auto code = getErrorCode(t);
-//             if (code == cpp2::ErrorCode::E_LEADER_CHANGED) {
-//                 std::this_thread::sleep_for(std::chrono::milliseconds(500));
-//                 return forwardTransactionImpl(
-//                     txnId, spaceId, partId, std::move(data), std::move(p), evb);
-//             } else {
-//                 p.setValue(code);
-//             }
-//         });
-// }
-
-// folly::SemiFuture<ErrOrVal> InternalStorageClient::getValue(size_t vIdLen,
-//                                                             GraphSpaceID spaceId,
-//                                                             folly::StringPiece key,
-//                                                             folly::EventBase* evb) {
-//     auto srcVid = key.subpiece(sizeof(PartitionID), vIdLen);
-//     auto stPartId = metaClient_->partId(spaceId, srcVid.str());
-//     if (!stPartId.ok()) {
-//         return cpp2::ErrorCode::E_SPACE_NOT_FOUND;
-//     }
-
-//     auto c = folly::makePromiseContract<ErrOrVal>();
-//     getValueImpl(spaceId, stPartId.value(), key.str(), std::move(c.first), evb);
-//     return std::move(c.second);
-// }
-
-// void InternalStorageClient::getValueImpl(GraphSpaceID spaceId,
-//                                          PartitionID partId,
-//                                          std::string&& key,
-//                                          folly::Promise<ErrOrVal> p,
-//                                          folly::EventBase* evb) {
-//     std::pair<HostAddr, cpp2::GetValueRequest> req;
-//     auto stLeaderHost = getFuzzyLeader(spaceId, partId);
-//     if (!stLeaderHost.ok()) {
-//         if (stLeaderHost.status().toString().find("partid")) {
-//             p.setValue(cpp2::ErrorCode::E_PART_NOT_FOUND);
-//         } else {
-//             p.setValue(cpp2::ErrorCode::E_SPACE_NOT_FOUND);
-//         }
-//         return;
-//     }
-//     req.first = stLeaderHost.value();
-//     req.first.port += kInternalPortOffset;
-
-//     req.second.set_space_id(spaceId);
-//     req.second.set_part_id(partId);
-//     req.second.set_key(key);
-
-//     auto remote = [](cpp2::InternalStorageServiceAsyncClient* client,
-//                      const cpp2::GetValueRequest& r) { return client->future_getValue(r); };
-
-//     auto cb = [=, p = std::move(p)](auto&& t) mutable {
-//         auto code = getErrorCode(t);
-//         if (code == cpp2::ErrorCode::SUCCEEDED) {
-//             p.setValue(t.value().value().get_value());
-//         } else if (code == cpp2::ErrorCode::E_LEADER_CHANGED) {
-//             // retry directly may easily get same error
-//             std::this_thread::sleep_for(std::chrono::milliseconds(500));
-//             return getValueImpl(spaceId, partId, std::move(key), std::move(p), evb);
-//         } else {
-//             p.setValue(code);
-//         }
-//     };
-
-//     getResponse(evb, std::move(req), remote).thenTry(std::move(cb));
-// }
 
 }   // namespace storage
 }   // namespace nebula

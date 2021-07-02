@@ -850,10 +850,20 @@ struct ChainResponse {
 
 
 struct ChainAddEdgesRequest {
-    1: AddEdgesRequest                          add_edges_request,
-    2: map<common.PartitionID, i64>             term_of_parts,
-    3: optional map<common.PartitionID, list<i64>>(
-        cpp.template = "std::unordered_map")    edge_ver,
+    1: common.GraphSpaceID                      space_id,
+    // partId => edges
+    2: map<common.PartitionID, list<NewEdge>>(
+        cpp.template = "std::unordered_map")    parts,
+    // A list of property names. The order of the property names should match
+    //   the data order specified in the NewEdge.props
+    3: list<binary>                             prop_names,
+    // if ture, when edge already exists, do nothing
+    4: bool                                     if_not_exists,
+    // 5: map<common.PartitionID, i64>             term_of_parts,
+    5: i64                                      term
+    6: optional list<i64>                       edge_version
+    // 6: optional map<common.PartitionID, list<i64>>(
+        // cpp.template = "std::unordered_map")    edge_ver,
 }
 
 
@@ -862,7 +872,7 @@ struct ChainUpdateEdgeRequest {
     2: i64                                      term,
     3: optional i64                             edge_version
     4: common.GraphSpaceID                      space_id,
-    5: required list<common.PartitionID>    parts,
+    5: required list<common.PartitionID>        parts,
 }
 
 service InternalStorageService {
