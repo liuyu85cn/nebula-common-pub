@@ -586,8 +586,6 @@ public:
 
     bool checkShadowAccountFromCache(const std::string& account) const;
 
-    TermID getTermFromCache(GraphSpaceID spaceId, PartitionID) const;
-
     StatusOr<std::vector<HostAddr>> getStorageHosts() const;
 
     StatusOr<HostAddr> getStorageLeaderFromCache(GraphSpaceID spaceId, PartitionID partId);
